@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { JOBS, type StationId } from "./catalog";
+import type { StationId } from "./catalog";
 
 export type Booking = {
   id: string;
@@ -81,9 +81,9 @@ export type Tear = {
 export type Client = {
   id: string;
   name: string;
-  seats: number;
-  jobs: StationId[];
-  discount: number;
+  spend: number;
+  status: "lead" | "sold" | "live";
+  done: StationId[];
 };
 
 type DeskData = {
@@ -102,8 +102,11 @@ type DeskData = {
 
 type DeskState = DeskData & {
   setActive: (id: string) => void;
-  addClient: (name: string) => void;
-  patchClient: (id: string, patch: Partial<Pick<Client, "name" | "seats" | "jobs" | "discount">>) => void;
+  addClient: (name: string, spend: number) => void;
+  patchClient: (
+    id: string,
+    patch: Partial<Pick<Client, "name" | "spend" | "status" | "done">>,
+  ) => void;
   addBooking: (booking: Omit<Booking, "id">) => void;
   removeBooking: (id: string) => void;
   addThread: (thread: Omit<Thread, "id" | "messages" | "status"> & { body: string }) => void;
@@ -132,25 +135,17 @@ function uid(): string {
 }
 
 function seed(): DeskData {
-  const all = JOBS.map((station) => station.id);
   return {
     clients: [
       {
-        id: "harbor",
-        name: "Harbor Studio",
-        seats: 4,
-        jobs: all,
-        discount: 0,
-      },
-      {
         id: "north",
         name: "Northwind Clinic",
-        seats: 8,
-        jobs: ["book", "inbox", "library"],
-        discount: 0.1,
+        spend: 900,
+        status: "lead",
+        done: [],
       },
     ],
-    activeId: "harbor",
+    activeId: "north",
     bookings: [
       {
         id: "bk-priya",
@@ -289,23 +284,20 @@ export const useDesk = create<DeskState>()(
     (set) => ({
       ...seed(),
       setActive: (id) => set({ activeId: id }),
-      addClient: (name) =>
+      addClient: (name, spend) =>
         set((state) => {
           const id = uid();
           return {
             activeId: id,
-            clients: [
-              ...state.clients,
-              { id, name, seats: 3, jobs: JOBS.map((station) => station.id), discount: 0 },
-            ],
+            clients: [...state.clients, { id, name, spend: Math.max(0, Math.round(spend)), status: "lead", done: [] }],
           };
         }),
       patchClient: (id, patch) =>
         set((state) => ({
           clients: state.clients.map((client) => {
             if (client.id !== id) return client;
-            const seats = patch.seats === undefined ? client.seats : Math.min(24, Math.max(1, Math.round(patch.seats)));
-            return { ...client, ...patch, seats };
+            const spend = patch.spend === undefined ? client.spend : Math.max(0, Math.round(patch.spend));
+            return { ...client, ...patch, spend };
           }),
         })),
       addBooking: (booking) => set((state) => ({ bookings: [{ ...booking, id: uid() }, ...state.bookings] })),
@@ -380,7 +372,7 @@ export const useDesk = create<DeskState>()(
       removeTear: (id) => set((state) => ({ tears: state.tears.filter((tear) => tear.id !== id) })),
     }),
     {
-      name: "fsl-desk-v2",
+      name: "fsl-desk-v3",
       skipHydration: true,
       storage: createJSONStorage(() => (typeof window === "undefined" ? memoryStorage : localStorage)),
       partialize: (state) => ({
@@ -398,7 +390,7 @@ export const useDesk = create<DeskState>()(
       }),
       merge: (persisted, current) => {
         const next = { ...current, ...(persisted as Partial<DeskData>) };
-        if (!next.clients?.length) {
+        if (!next.clients?.length || typeof next.clients[0]?.spend !== "number") {
           next.clients = seed().clients;
           next.activeId = seed().activeId;
         }

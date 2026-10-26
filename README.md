@@ -1,6 +1,9 @@
 # Full Stacks Life
 
-Four jobs, running: Book, Inbox, Board, Library. One invoice for the client on the desk.
+A service, not a cheaper clone of free tools.
+
+$4,000 to take a company off scheduling, a shared inbox, projects, and notes. $500 a month to run them. If they already pay less than $500, do not sell it.
+
 
 
 

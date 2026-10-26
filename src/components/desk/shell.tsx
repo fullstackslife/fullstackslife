@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { quote, STATIONS, type StationId } from "@/lib/stack/catalog";
+import { offer, STATIONS, type StationId } from "@/lib/stack/catalog";
 import { useDesk } from "@/lib/stack/store";
 import { Floor } from "./floor";
 import { Library } from "./library";
@@ -13,7 +13,7 @@ export function Desk({ station }: { station: StationId }) {
   const activeId = useDesk((s) => s.activeId);
   const setActive = useDesk((s) => s.setActive);
   const client = clients.find((item) => item.id === activeId) ?? clients[0];
-  const bill = client ? quote(client) : null;
+  const deal = client ? offer(client.spend) : null;
 
   useEffect(() => {
     void useDesk.persist.rehydrate();
@@ -42,9 +42,9 @@ export function Desk({ station }: { station: StationId }) {
                 ))}
               </select>
               <p className="mt-3 font-display text-3xl tabular-nums text-brass">
-                ${bill ? bill.charge.toLocaleString() : 0}
+                {deal?.sell ? "$500" : "Walk"}
               </p>
-              <p className="text-xs text-mute">invoice / mo</p>
+              <p className="text-xs text-mute">{deal?.sell ? "retainer / mo" : "do not sell"}</p>
             </label>
           ) : null}
           <nav className="mt-8 flex flex-col">
@@ -80,10 +80,8 @@ export function Desk({ station }: { station: StationId }) {
                 </select>
               </label>
               <div className="pb-1 text-right">
-                <p className="font-display text-2xl tabular-nums text-brass">
-                  ${bill ? bill.charge.toLocaleString() : 0}
-                </p>
-                <p className="text-xs text-mute">invoice</p>
+                <p className="font-display text-2xl tabular-nums text-brass">{deal?.sell ? "$500" : "Walk"}</p>
+                <p className="text-xs text-mute">{deal?.sell ? "a month" : "don't sell"}</p>
               </div>
             </div>
           </header>

@@ -29,7 +29,7 @@ export const STATIONS: Station[] = [
     ask: 0,
     cost: 0,
     own: false,
-    line: "Whose desk is open, what they pay, what you keep.",
+    line: "The job you are selling.",
     why: "",
   },
   {
@@ -37,48 +37,48 @@ export const STATIONS: Station[] = [
     index: "01",
     name: "Book",
     replaces: "Calendly",
-    price: 12,
-    ask: 8,
-    cost: 4,
+    price: 0,
+    ask: 0,
+    cost: 0,
     own: true,
-    line: "A link, a week, a confirmation.",
-    why: "Small enough to write ourselves. We bill our scheduler, not Cal.com.",
+    line: "Their scheduling page, on their domain.",
+    why: "Included in the retainer. Not sold alone.",
   },
   {
     id: "inbox",
     index: "02",
     name: "Inbox",
     replaces: "Intercom",
-    price: 74,
-    ask: 29,
-    cost: 12,
+    price: 0,
+    ask: 0,
+    cost: 0,
     own: true,
-    line: "A thread and a reply.",
-    why: "We write the inbox. Chatwoot's paid half is not ours to resell.",
+    line: "Their shared inbox.",
+    why: "Included in the retainer. Not sold alone.",
   },
   {
     id: "board",
     index: "03",
     name: "Board",
     replaces: "Asana",
-    price: 11,
-    ask: 8,
-    cost: 6,
+    price: 0,
+    ask: 0,
+    cost: 0,
     own: true,
-    line: "Three columns on the same desk.",
-    why: "Already ours. Worth money only because it sits on the invoice with the rest.",
+    line: "Their board.",
+    why: "Included in the retainer. Not sold alone.",
   },
   {
     id: "library",
     index: "04",
     name: "Library",
-    replaces: "Notion AI",
-    price: 10,
-    ask: 6,
-    cost: 4,
+    replaces: "Notion",
+    price: 0,
+    ask: 0,
+    cost: 0,
     own: true,
-    line: "Notes and search.",
-    why: "The notes are ours. An AI answer is a model bill, not this line.",
+    line: "Their notes.",
+    why: "Included in the retainer. Not sold alone.",
   },
 ];
 
@@ -92,36 +92,25 @@ export function isStationId(value: unknown): value is StationId {
   return typeof value === "string" && (STATION_IDS as readonly string[]).includes(value);
 }
 
-export type QuoteInput = {
-  seats: number;
-  jobs: StationId[];
-  discount: number;
-};
+export const SETUP = 4000;
+export const RETAINER = 500;
 
-export type Quote = {
-  closed: number;
-  ask: number;
-  charge: number;
-  cost: number;
-  margin: number;
-  on: Station[];
-};
-
-export function quote(input: QuoteInput): Quote {
-  const on = JOBS.filter((station) => input.jobs.includes(station.id));
-  const seats = input.seats;
-  const closed = on.reduce((sum, station) => sum + station.price, 0) * seats;
-  const ask = on.reduce((sum, station) => sum + station.ask, 0) * seats;
-  const charge = Math.round(ask * (1 - input.discount));
-  const cost = on.reduce((sum, station) => sum + station.cost, 0);
-  return { closed, ask, charge, cost, margin: charge - cost, on };
+export function offer(spend: number): {
+  setup: number;
+  retainer: number;
+  spend: number;
+  save: number;
+  sell: boolean;
+  payback: number | null;
+} {
+  const save = spend - RETAINER;
+  return {
+    setup: SETUP,
+    retainer: RETAINER,
+    spend,
+    save,
+    sell: save > 0,
+    payback: save > 0 ? Math.ceil(SETUP / save) : null,
+  };
 }
 
-export function moneyLine(station: Station): string {
-  if (station.ask <= 0) return station.line;
-  const run =
-    station.cost > 0
-      ? `Costs you $${station.cost} a month to run, however many seats.`
-      : "Costs you nothing while it stays on this device.";
-  return `$${station.ask} a seat. Theirs lists near $${station.price}. ${run}`;
-}
