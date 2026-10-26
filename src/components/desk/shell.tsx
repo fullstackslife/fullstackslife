@@ -15,7 +15,7 @@ export function Desk({ station }: { station: StationId }) {
   const activeId = useDesk((s) => s.activeId);
   const setActive = useDesk((s) => s.setActive);
   const client = clients.find((item) => item.id === activeId) ?? clients[0];
-  const margin = client ? quote(client).margin : 0;
+  const bill = client ? quote(client) : null;
   const [drawer, setDrawer] = useState(false);
 
   useEffect(() => {
@@ -48,8 +48,10 @@ export function Desk({ station }: { station: StationId }) {
                   </option>
                 ))}
               </select>
-              <p className="mt-3 font-display text-3xl tabular-nums text-brass">${margin.toLocaleString()}</p>
-              <p className="text-xs text-mute">kept this month</p>
+              <p className="mt-3 font-display text-3xl tabular-nums text-brass">
+                ${bill ? bill.charge.toLocaleString() : 0}
+              </p>
+              <p className="text-xs text-mute">invoice / mo</p>
             </label>
           ) : null}
           <nav className="mt-8 flex flex-col">
@@ -85,8 +87,10 @@ export function Desk({ station }: { station: StationId }) {
                 </select>
               </label>
               <div className="pb-1 text-right">
-                <p className="font-display text-2xl tabular-nums text-brass">${margin.toLocaleString()}</p>
-                <p className="text-xs text-mute">kept / mo</p>
+                <p className="font-display text-2xl tabular-nums text-brass">
+                  ${bill ? bill.charge.toLocaleString() : 0}
+                </p>
+                <p className="text-xs text-mute">invoice</p>
               </div>
             </div>
           </header>

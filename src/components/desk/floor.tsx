@@ -11,6 +11,15 @@ const CUTS = [
   { label: "20% off", value: 0.2 },
 ];
 
+function Ledger({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <p className={`flex items-baseline justify-between gap-3 py-0.5 text-sm tabular-nums ${strong ? "font-medium" : ""}`}>
+      <span>{label}</span>
+      <span>{value}</span>
+    </p>
+  );
+}
+
 function dollars(value: number): string {
   return `$${value.toLocaleString()}`;
 }
@@ -34,30 +43,49 @@ export function Floor() {
   const offer = [
     `${client.name}`,
     `${client.seats} ${client.seats === 1 ? "seat" : "seats"} · ${bill.on.map((station) => station.name).join(", ") || "no jobs on"}`,
-    `${dollars(bill.charge)} / month`,
-    bill.closed > 0 ? `The closed seats list near ${dollars(bill.closed)}.` : "Nothing on the bill yet.",
-    "One desk. One invoice.",
+    `${dollars(bill.charge)} invoice`,
+    `Closed stack ${dollars(bill.closed)}. They save ${dollars(bill.closed - bill.charge)}.`,
+    `Costs ${dollars(bill.cost)} to run, once. You keep ${dollars(bill.margin)}.`,
   ].join("\n");
 
   return (
     <div>
       <section className="rounded-lg bg-paper px-4 py-5 text-ink shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
-        <p className="text-sm">{client.name} pays</p>
+        <p className="text-sm">Invoice</p>
         <p className="mt-1 font-display text-5xl leading-none tabular-nums">{dollars(bill.charge)}</p>
-        <p className="mt-2 text-sm">a month, on this desk</p>
-        <div className="mt-5 grid grid-cols-3 gap-3 border-t border-ink/15 pt-4">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-ink/60">Theirs</p>
-            <p className="mt-1 font-display text-xl tabular-nums">{dollars(bill.closed)}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-ink/60">To run</p>
-            <p className="mt-1 font-display text-xl tabular-nums">{dollars(bill.cost)}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-ink/60">You keep</p>
-            <p className="mt-1 font-display text-xl tabular-nums">{dollars(bill.margin)}</p>
-          </div>
+        <p className="mt-2 text-sm">
+          {client.seats} {client.seats === 1 ? "seat" : "seats"}
+          {bill.on.length ? ` · ${bill.on.map((station) => station.name).join(", ")}` : " · nothing on"}
+        </p>
+
+        <div className="mt-5 border-t border-ink/15 pt-3">
+          {bill.on.map((station) => (
+            <p key={station.id} className="flex min-h-8 items-baseline justify-between gap-3 text-sm tabular-nums">
+              <span>{station.name}</span>
+              <span>
+                ${station.ask} × {client.seats}
+                <span className="ml-3 inline-block w-14 text-right">${station.ask * client.seats}</span>
+              </span>
+            </p>
+          ))}
+          {bill.on.length === 0 ? <p className="text-sm">No jobs on this desk.</p> : null}
+          {client.discount > 0 ? (
+            <p className="mt-2 flex items-baseline justify-between border-t border-ink/15 pt-2 text-sm tabular-nums">
+              <span>{Math.round(client.discount * 100)}% off the ask</span>
+              <span>−{dollars(bill.ask - bill.charge)}</span>
+            </p>
+          ) : null}
+        </div>
+
+        <div className="mt-4 border-t border-ink/15 pt-3">
+          <Ledger label="Closed stack" value={dollars(bill.closed)} />
+          <Ledger label="This invoice" value={dollars(bill.charge)} />
+          <Ledger label="They save" value={dollars(bill.closed - bill.charge)} strong />
+        </div>
+        <div className="mt-3 border-t border-ink/15 pt-3">
+          <Ledger label="This invoice" value={dollars(bill.charge)} />
+          <Ledger label="To run, once" value={`−${dollars(bill.cost)}`} />
+          <Ledger label="You keep" value={dollars(bill.margin)} strong />
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-2">
           <button
@@ -68,7 +96,9 @@ export function Floor() {
           >
             Fewer seats
           </button>
-          <span className="min-w-16 text-center text-sm tabular-nums">{client.seats} seats</span>
+          <span className="min-w-16 text-center text-sm tabular-nums">
+            {client.seats} {client.seats === 1 ? "seat" : "seats"}
+          </span>
           <button
             type="button"
             className="min-h-11 rounded-md border border-ink/20 px-3 text-sm"
@@ -129,9 +159,8 @@ export function Floor() {
               >
                 <span className="w-16 shrink-0 text-paper">{station.name}</span>
                 <span className="hidden truncate text-sm text-mute sm:block">instead of {station.replaces}</span>
-                <span className="ml-auto shrink-0 text-sm tabular-nums text-mute">
-                  ${station.ask}
-                  <span className="text-mute/70"> · was ${station.price}</span>
+                <span className="ml-auto shrink-0 text-sm tabular-nums text-paper">
+                  ${station.ask * client.seats}
                 </span>
               </Link>
             </li>
@@ -139,8 +168,7 @@ export function Floor() {
         })}
       </ul>
       <p className="mt-3 text-sm leading-relaxed text-mute">
-        Theirs is the closed seat. Yours is the ask. To run is what the desk costs you for the jobs that are on,
-        once, not per seat. Dictate, Studio, and Reel stay on the device, so they add margin without a host bill.
+        The lines above sum to the ask. To run is once a month for the jobs that are on, not once per seat.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
