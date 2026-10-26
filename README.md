@@ -1,8 +1,7 @@
 # Full Stacks Life
 
-The invoice is the jobs we write: Book, Inbox, Board, Library.
+Four jobs, running: Book, Inbox, Board, Library. One invoice for the client on the desk.
 
-Dictate, Studio, Lens, Stage, and Reel stay on the desk and off the bill. A free app, someone else's model, or an index we don't have is not a seat. Stage can come onto the invoice once the recording lives on our host.
 
 
 ## Deploy

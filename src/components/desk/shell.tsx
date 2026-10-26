@@ -1,14 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { quote, STATIONS, type StationId } from "@/lib/stack/catalog";
 import { useDesk } from "@/lib/stack/store";
 import { Floor } from "./floor";
-import { Lens, Lab, Reel, Stage } from "./reach";
-import { Library, Dictate, Studio } from "./voice";
+import { Library } from "./library";
 import { Board, Book, Inbox } from "./work";
 
-const DOCK: StationId[] = ["floor", "book", "inbox", "board"];
-const DRAWER: StationId[] = ["library", "dictate", "studio", "lens", "stage", "reel", "lab"];
+const DOCK: StationId[] = ["floor", "book", "inbox", "board", "library"];
 
 export function Desk({ station }: { station: StationId }) {
   const clients = useDesk((s) => s.clients);
@@ -16,15 +14,10 @@ export function Desk({ station }: { station: StationId }) {
   const setActive = useDesk((s) => s.setActive);
   const client = clients.find((item) => item.id === activeId) ?? clients[0];
   const bill = client ? quote(client) : null;
-  const [drawer, setDrawer] = useState(false);
 
   useEffect(() => {
     void useDesk.persist.rehydrate();
   }, []);
-
-  useEffect(() => {
-    setDrawer(false);
-  }, [station]);
 
   return (
     <div className="min-h-dvh bg-ink text-paper">
@@ -101,50 +94,21 @@ export function Desk({ station }: { station: StationId }) {
             {station === "inbox" ? <Inbox /> : null}
             {station === "board" ? <Board /> : null}
             {station === "library" ? <Library /> : null}
-            {station === "dictate" ? <Dictate /> : null}
-            {station === "studio" ? <Studio /> : null}
-            {station === "lens" ? <Lens /> : null}
-            {station === "stage" ? <Stage /> : null}
-            {station === "reel" ? <Reel /> : null}
-            {station === "lab" ? <Lab /> : null}
           </main>
         </div>
       </div>
 
-      {drawer ? (
-        <div className="fixed inset-x-0 bottom-[4.25rem] z-30 border-t border-line bg-panel px-3 py-3 md:hidden">
-          <div className="mx-auto grid max-w-lg grid-cols-2 gap-2">
-            {DRAWER.map((id) => {
-              const item = STATIONS.find((station) => station.id === id);
-              if (!item) return null;
-              return (
-                <Link
-                  key={id}
-                  to="/"
-                  search={{ station: id }}
-                  className={`flex min-h-14 items-center rounded-md px-3 text-sm ${
-                    id === station ? "bg-ink text-brass" : "text-paper"
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
-
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink pb-[env(safe-area-inset-bottom)] md:hidden">
         <div className="mx-auto grid max-w-lg grid-cols-5">
           {DOCK.map((id) => {
-            const item = STATIONS.find((station) => station.id === id);
+            const item = STATIONS.find((entry) => entry.id === id);
             if (!item) return null;
             return (
               <Link
                 key={id}
                 to="/"
                 search={{ station: id }}
-                className={`flex min-h-16 flex-col items-center justify-center text-xs ${
+                className={`flex min-h-16 items-center justify-center text-xs ${
                   id === station ? "text-brass" : "text-mute"
                 }`}
               >
@@ -152,15 +116,6 @@ export function Desk({ station }: { station: StationId }) {
               </Link>
             );
           })}
-          <button
-            type="button"
-            onClick={() => setDrawer((open) => !open)}
-            className={`flex min-h-16 flex-col items-center justify-center text-xs ${
-              drawer || DRAWER.includes(station) ? "text-brass" : "text-mute"
-            }`}
-          >
-            More
-          </button>
         </div>
       </nav>
     </div>

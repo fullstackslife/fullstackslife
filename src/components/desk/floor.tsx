@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { HELD, JOBS, quote, stationById } from "@/lib/stack/catalog";
+import { JOBS, quote } from "@/lib/stack/catalog";
 import { useDesk } from "@/lib/stack/store";
 import { when } from "@/lib/stack/time";
 import { Panel } from "./ui";
@@ -168,23 +168,8 @@ export function Floor() {
           );
         })}
       </ul>
-      <h2 className="mt-8 font-display text-xl text-paper">Not ours</h2>
-      <ul className="mt-2 divide-y divide-line border-y border-line">
-        {HELD.map((station) => (
-          <li key={station.id}>
-            <Link
-              to="/"
-              search={{ station: station.id }}
-              className="flex min-h-14 items-center gap-3 py-2"
-            >
-              <span className="w-16 shrink-0 text-mute">{station.name}</span>
-              <span className="min-w-0 text-sm leading-snug text-mute">{station.why}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
       <p className="mt-3 text-sm leading-relaxed text-mute">
-        The invoice is only the jobs we write. To run is once a month, not once per seat.
+        Book, inbox, board, library. To run is once a month, not once per seat.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -235,13 +220,6 @@ export function Floor() {
           Open a desk
         </button>
       </form>
-      <p className="mt-6 text-sm text-mute">
-        <Link to="/" search={{ station: "lab" }} className="text-brass">
-          Lab
-        </Link>
-        {" · "}
-        {stationById("lab").line}
-      </p>
     </div>
   );
 }

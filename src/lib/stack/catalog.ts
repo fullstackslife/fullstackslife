@@ -1,16 +1,4 @@
-export const STATION_IDS = [
-  "floor",
-  "book",
-  "inbox",
-  "board",
-  "library",
-  "dictate",
-  "studio",
-  "lens",
-  "stage",
-  "reel",
-  "lab",
-] as const;
+export const STATION_IDS = ["floor", "book", "inbox", "board", "library"] as const;
 
 export type StationId = (typeof STATION_IDS)[number];
 
@@ -92,83 +80,9 @@ export const STATIONS: Station[] = [
     line: "Notes and search.",
     why: "The notes are ours. An AI answer is a model bill, not this line.",
   },
-  {
-    id: "dictate",
-    index: "05",
-    name: "Dictate",
-    replaces: "Wispr Flow",
-    price: 12,
-    ask: 0,
-    cost: 0,
-    own: false,
-    line: "Talk, then file it.",
-    why: "A free desktop app already does this. This demo is not a seat.",
-  },
-  {
-    id: "studio",
-    index: "06",
-    name: "Studio",
-    replaces: "ElevenLabs",
-    price: 22,
-    ask: 0,
-    cost: 0,
-    own: false,
-    line: "Read a script aloud.",
-    why: "The upstream is AGPL, the models belong to someone else, and a cloned voice is not ours to bill.",
-  },
-  {
-    id: "lens",
-    index: "07",
-    name: "Lens",
-    replaces: "Semrush",
-    price: 140,
-    ask: 0,
-    cost: 0,
-    own: false,
-    line: "Score a page you paste.",
-    why: "Semrush is the index. We don't have one.",
-  },
-  {
-    id: "stage",
-    index: "08",
-    name: "Stage",
-    replaces: "Loom",
-    price: 15,
-    ask: 0,
-    cost: 0,
-    own: false,
-    line: "A take and a script.",
-    why: "Ownable once we host the file. A recording with nowhere to put it is not a product.",
-  },
-  {
-    id: "reel",
-    index: "09",
-    name: "Reel",
-    replaces: "Higgsfield",
-    price: 29,
-    ask: 0,
-    cost: 0,
-    own: false,
-    line: "Shots, in order.",
-    why: "The frames come from someone else's model and key.",
-  },
-  {
-    id: "lab",
-    index: "10",
-    name: "Lab",
-    replaces: "A closed product",
-    price: 0,
-    ask: 0,
-    cost: 0,
-    own: false,
-    line: "Name a product. We either write that job ourselves, or we don't sell it.",
-    why: "",
-  },
 ];
 
 export const JOBS = STATIONS.filter((station) => station.own);
-
-export const HELD = STATIONS.filter((station) => !station.own && station.id !== "floor" && station.id !== "lab");
 
 export function stationById(id: StationId): Station {
   return STATIONS.find((station) => station.id === id) ?? STATIONS[0];
@@ -210,24 +124,4 @@ export function moneyLine(station: Station): string {
       ? `Costs you $${station.cost} a month to run, however many seats.`
       : "Costs you nothing while it stays on this device.";
   return `$${station.ask} a seat. Theirs lists near $${station.price}. ${run}`;
-}
-
-const HINTS: { words: string[]; station: StationId }[] = [
-  { words: ["calendar", "schedule", "book", "meeting", "calendly"], station: "book" },
-  { words: ["chat", "support", "inbox", "intercom", "helpdesk", "ticket"], station: "inbox" },
-  { words: ["task", "project", "asana", "jira", "kanban", "board"], station: "board" },
-  { words: ["note", "wiki", "notion", "docs", "knowledge", "second brain"], station: "library" },
-  { words: ["dictat", "whisper", "speech to text", "wispr", "transcri"], station: "dictate" },
-  { words: ["voice", "tts", "eleven", "clone", "dub", "audiobook"], station: "studio" },
-  { words: ["seo", "keyword", "backlink", "semrush", "ahrefs", "rank"], station: "lens" },
-  { words: ["loom", "screen record", "screen capture", "video message"], station: "stage" },
-  { words: ["higgs", "storyboard", "video gen", "image gen", "text to video"], station: "reel" },
-];
-
-export function guessStation(text: string): StationId {
-  const hay = text.toLowerCase();
-  for (const hint of HINTS) {
-    if (hint.words.some((word) => hay.includes(word))) return hint.station;
-  }
-  return "library";
 }
