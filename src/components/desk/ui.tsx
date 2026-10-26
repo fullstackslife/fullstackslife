@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { stationById, type StationId } from "@/lib/stack/catalog";
+import { moneyLine, stationById, type StationId } from "@/lib/stack/catalog";
 
 export function Btn({
   children,
@@ -88,23 +88,11 @@ export function Panel({ children, className = "" }: { children: ReactNode; class
 export function StationHead({ id }: { id: StationId }) {
   const station = stationById(id);
   return (
-    <header className="mb-8 max-w-2xl">
-      <p className="font-display text-lg text-brass tabular-nums">{station.index}</p>
-      <h1 className="font-display text-4xl leading-tight text-paper md:text-5xl">{station.name}</h1>
-      <p className="mt-3 text-base leading-relaxed text-mute">{station.line}</p>
-      <p className="mt-3 text-sm leading-relaxed text-paper">{station.host}</p>
-      {station.href ? (
-        <a
-          href={station.href}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm text-brass"
-        >
-          {station.upstream ?? "Repository"}
-          {station.stars ? <span className="text-mute">· {station.stars} stars</span> : null}
-        </a>
-      ) : null}
-      <p className="text-sm text-mute">Stands in for {station.replaces}.</p>
+    <header className="mb-6">
+      <p className="text-sm tabular-nums text-brass">{station.index}</p>
+      <h1 className="font-display text-4xl leading-none text-paper">{station.name}</h1>
+      <p className="mt-3 max-w-xl text-base leading-relaxed text-paper">{station.line}</p>
+      {station.ask > 0 ? <p className="mt-2 max-w-xl text-sm leading-relaxed text-mute">{moneyLine(station)}</p> : null}
     </header>
   );
 }

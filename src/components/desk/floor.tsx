@@ -1,133 +1,203 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { JOBS, MONTHLY, STATIONS } from "@/lib/stack/catalog";
+import { JOBS, quote, stationById } from "@/lib/stack/catalog";
 import { useDesk } from "@/lib/stack/store";
 import { when } from "@/lib/stack/time";
-import { Btn, Panel } from "./ui";
+import { Panel } from "./ui";
+
+const CUTS = [
+  { label: "Full ask", value: 0 },
+  { label: "10% off", value: 0.1 },
+  { label: "20% off", value: 0.2 },
+];
+
+function dollars(value: number): string {
+  return `$${value.toLocaleString()}`;
+}
 
 export function Floor() {
-  const seats = useDesk((s) => s.seats);
-  const setSeats = useDesk((s) => s.setSeats);
+  const clients = useDesk((s) => s.clients);
+  const activeId = useDesk((s) => s.activeId);
+  const patchClient = useDesk((s) => s.patchClient);
+  const addClient = useDesk((s) => s.addClient);
   const bookings = useDesk((s) => s.bookings);
   const threads = useDesk((s) => s.threads);
-  const tasks = useDesk((s) => s.tasks);
-  const notes = useDesk((s) => s.notes);
-  const kept = MONTHLY * seats;
+  const client = clients.find((item) => item.id === activeId) ?? clients[0];
+  const [name, setName] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  if (!client) return null;
+
+  const bill = quote(client);
   const open = threads.filter((thread) => thread.status === "open").length;
-  const now = tasks.filter((task) => task.column === "now");
   const next = [...bookings].sort((a, b) => +new Date(a.at) - +new Date(b.at))[0];
+  const offer = [
+    `${client.name}`,
+    `${client.seats} ${client.seats === 1 ? "seat" : "seats"} · ${bill.on.map((station) => station.name).join(", ") || "no jobs on"}`,
+    `${dollars(bill.charge)} / month`,
+    bill.closed > 0 ? `The closed seats list near ${dollars(bill.closed)}.` : "Nothing on the bill yet.",
+    "One desk. One invoice.",
+  ].join("\n");
 
   return (
     <div>
-      <header className="max-w-2xl">
-        <p className="text-sm tracking-wide text-brass">Full Stacks Life</p>
-        <h1 className="mt-3 font-display text-5xl leading-none text-paper md:text-6xl">
-          Nine jobs.
-          <span className="block italic text-brass">One desk.</span>
-        </h1>
-        <p className="mt-5 text-base leading-relaxed text-mute">
-          Scheduling, support, projects, memory, dictation, voice, search, capture, and motion share one
-          ledger. The open-source projects stay upstream. This desk is the layer they have in common.
-        </p>
-      </header>
-
-      <Panel className="mt-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-sm text-mute">Illustrated list price, not a quote</p>
-          <p className="font-display text-5xl tabular-nums text-paper">
-            ${kept.toLocaleString()}
-            <span className="ml-2 text-xl text-mute">/ mo</span>
-          </p>
-          <p className="mt-1 text-sm text-mute">
-            ${MONTHLY} across the nine, times {seats} {seats === 1 ? "seat" : "seats"} you are not renting.
-          </p>
+      <section className="rounded-lg bg-paper px-4 py-5 text-ink shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
+        <p className="text-sm">{client.name} pays</p>
+        <p className="mt-1 font-display text-5xl leading-none tabular-nums">{dollars(bill.charge)}</p>
+        <p className="mt-2 text-sm">a month, on this desk</p>
+        <div className="mt-5 grid grid-cols-3 gap-3 border-t border-ink/15 pt-4">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-ink/60">Theirs</p>
+            <p className="mt-1 font-display text-xl tabular-nums">{dollars(bill.closed)}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-ink/60">To run</p>
+            <p className="mt-1 font-display text-xl tabular-nums">{dollars(bill.cost)}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide text-ink/60">You keep</p>
+            <p className="mt-1 font-display text-xl tabular-nums">{dollars(bill.margin)}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Btn kind="ghost" onClick={() => setSeats(seats - 1)} disabled={seats <= 1}>
-            Fewer
-          </Btn>
-          <Btn kind="ghost" onClick={() => setSeats(seats + 1)} disabled={seats >= 24}>
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="min-h-11 rounded-md border border-ink/20 px-3 text-sm"
+            onClick={() => patchClient(client.id, { seats: client.seats - 1 })}
+            disabled={client.seats <= 1}
+          >
+            Fewer seats
+          </button>
+          <span className="min-w-16 text-center text-sm tabular-nums">{client.seats} seats</span>
+          <button
+            type="button"
+            className="min-h-11 rounded-md border border-ink/20 px-3 text-sm"
+            onClick={() => patchClient(client.id, { seats: client.seats + 1 })}
+            disabled={client.seats >= 24}
+          >
             More seats
-          </Btn>
+          </button>
         </div>
-      </Panel>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {CUTS.map((cut) => (
+            <button
+              key={cut.label}
+              type="button"
+              onClick={() => patchClient(client.id, { discount: cut.value })}
+              className={`min-h-11 rounded-md px-3 text-sm ${
+                client.discount === cut.value ? "bg-ink text-paper" : "border border-ink/20"
+              }`}
+            >
+              {cut.label}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="mt-4 inline-flex min-h-11 items-center text-sm font-medium underline decoration-ink/30 underline-offset-4"
+          onClick={() => {
+            void navigator.clipboard?.writeText(offer).then(() => {
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1600);
+            });
+          }}
+        >
+          {copied ? "Copied the offer" : "Copy the offer"}
+        </button>
+      </section>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <ul className="mt-6 divide-y divide-line border-y border-line">
+        {JOBS.map((station) => {
+          const on = client.jobs.includes(station.id);
+          return (
+            <li key={station.id} className="flex items-center gap-2 py-1">
+              <button
+                type="button"
+                onClick={() =>
+                  patchClient(client.id, {
+                    jobs: on ? client.jobs.filter((id) => id !== station.id) : [...client.jobs, station.id],
+                  })
+                }
+                className={`min-h-11 min-w-14 rounded-md text-sm ${on ? "text-brass" : "text-mute"}`}
+              >
+                {on ? "On" : "Off"}
+              </button>
+              <Link
+                to="/"
+                search={{ station: station.id }}
+                className="flex min-h-11 min-w-0 flex-1 items-center gap-3"
+              >
+                <span className="w-16 shrink-0 text-paper">{station.name}</span>
+                <span className="hidden truncate text-sm text-mute sm:block">instead of {station.replaces}</span>
+                <span className="ml-auto shrink-0 text-sm tabular-nums text-mute">
+                  ${station.ask}
+                  <span className="text-mute/70"> · was ${station.price}</span>
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 text-sm leading-relaxed text-mute">
+        Theirs is the closed seat. Yours is the ask. To run is what the desk costs you for the jobs that are on,
+        once, not per seat. Dictate, Studio, and Reel stay on the device, so they add margin without a host bill.
+      </p>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <Panel>
-          <p className="text-sm text-mute">Next time</p>
+          <p className="text-sm text-mute">Next on the book</p>
           {next ? (
             <>
               <p className="mt-2 font-display text-2xl text-paper">{next.name}</p>
               <p className="mt-1 text-sm text-mute">{when(next.at)}</p>
-              <p className="mt-2 text-sm text-paper">{next.kind}</p>
             </>
           ) : (
             <p className="mt-2 text-paper">Nothing booked.</p>
           )}
-          <Link to="/" search={{ station: "book" }} className="mt-4 inline-flex min-h-11 items-center text-sm text-brass">
+          <Link to="/" search={{ station: "book" }} className="mt-3 inline-flex min-h-11 items-center text-sm text-brass">
             Open Book
           </Link>
         </Panel>
         <Panel>
-          <p className="text-sm text-mute">Open threads</p>
+          <p className="text-sm text-mute">Waiting in the inbox</p>
           <p className="mt-2 font-display text-4xl tabular-nums text-paper">{open}</p>
-          <p className="mt-1 text-sm text-mute">{threads.length} in the inbox</p>
-          <Link to="/" search={{ station: "inbox" }} className="mt-4 inline-flex min-h-11 items-center text-sm text-brass">
+          <Link to="/" search={{ station: "inbox" }} className="mt-3 inline-flex min-h-11 items-center text-sm text-brass">
             Open Inbox
-          </Link>
-        </Panel>
-        <Panel>
-          <p className="text-sm text-mute">On the board now</p>
-          <ul className="mt-2 space-y-2">
-            {now.length === 0 ? <li className="text-paper">Nothing in motion.</li> : null}
-            {now.map((task) => (
-              <li key={task.id} className="text-sm text-paper">
-                {task.title}
-              </li>
-            ))}
-          </ul>
-          <Link to="/" search={{ station: "board" }} className="mt-4 inline-flex min-h-11 items-center text-sm text-brass">
-            Open Board
           </Link>
         </Panel>
       </div>
 
-      <div className="mt-8">
-        <div className="mb-3 flex items-baseline justify-between gap-3">
-          <h2 className="font-display text-2xl text-paper">The nine</h2>
-          <p className="text-sm text-mute">{notes.length} notes already on the desk</p>
-        </div>
-        <ul className="divide-y divide-line border-y border-line">
-          {JOBS.map((station) => (
-            <li key={station.id}>
-              <Link
-                to="/"
-                search={{ station: station.id }}
-                className="flex min-h-14 items-center gap-4 py-3"
-              >
-                <span className="w-8 font-display text-brass tabular-nums">{station.index}</span>
-                <span className="w-24 font-medium text-paper">{station.name}</span>
-                <span className="hidden flex-1 text-sm text-mute sm:block">for {station.replaces}</span>
-                <span className="ml-auto text-sm tabular-nums text-mute">${station.price}</span>
-              </Link>
-            </li>
-          ))}
-          {STATIONS.filter((station) => station.id === "lab").map((station) => (
-            <li key={station.id}>
-              <Link to="/" search={{ station: "lab" }} className="flex min-h-14 items-center gap-4 py-3">
-                <span className="w-8 font-display text-brass tabular-nums">{station.index}</span>
-                <span className="w-24 font-medium text-paper">Lab</span>
-                <span className="hidden flex-1 text-sm text-mute sm:block">bonus · Reverse Engineer Anything</span>
-                <span className="ml-auto text-sm text-mute">upstream</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-mute">
-          Star counts move. Prices are round illustrations of published entry seats — Calendly, Intercom,
-          Asana, Notion AI, Wispr Flow, ElevenLabs, Semrush, Loom, Higgsfield — not invoices. Lens does not
-          call Semrush. Studio does not clone a voice. Reel does not spend a generation key.
-        </p>
-      </div>
+      <form
+        className="mt-6 flex flex-col gap-2 sm:flex-row"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const nextName = name.trim();
+          if (!nextName) return;
+          addClient(nextName);
+          setName("");
+        }}
+      >
+        <input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="A new client"
+          className="h-11 min-w-0 flex-1 rounded-md border border-line bg-ink px-3 text-paper outline-none placeholder:text-mute"
+        />
+        <button
+          type="submit"
+          disabled={!name.trim()}
+          className="inline-flex min-h-11 items-center justify-center rounded-md bg-brass px-4 text-sm font-medium text-ink disabled:opacity-40"
+        >
+          Open a desk
+        </button>
+      </form>
+      <p className="mt-6 text-sm text-mute">
+        <Link to="/" search={{ station: "lab" }} className="text-brass">
+          Lab
+        </Link>
+        {" · "}
+        {stationById("lab").line}
+      </p>
     </div>
   );
 }

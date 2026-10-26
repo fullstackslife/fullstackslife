@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { guessStation, stationById, STATIONS } from "@/lib/stack/catalog";
+import { guessStation, quote, stationById, type StationId } from "@/lib/stack/catalog";
 import { scorePage, type PageDraft } from "@/lib/stack/score";
 import { useDesk } from "@/lib/stack/store";
 import { Area, Btn, Field, Panel, StationHead } from "./ui";
@@ -300,41 +300,24 @@ export function Lab() {
   const tears = useDesk((s) => s.tears);
   const addTear = useDesk((s) => s.addTear);
   const removeTear = useDesk((s) => s.removeTear);
+  const clients = useDesk((s) => s.clients);
+  const activeId = useDesk((s) => s.activeId);
+  const client = clients.find((item) => item.id === activeId) ?? clients[0];
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [job, setJob] = useState("");
-  const jobs = STATIONS.filter((station) => station.id !== "floor");
 
   return (
     <div>
       <StationHead id="lab" />
-      <ul className="divide-y divide-line border-y border-line">
-        {jobs.map((station) => (
-          <li key={station.id} className="grid gap-1 py-4 sm:grid-cols-[8rem_1fr]">
-            <p className="font-display text-brass">{station.index}</p>
-            <div>
-              <p className="text-paper">
-                {station.replaces}
-                <span className="text-mute"> → {station.name}</span>
-              </p>
-              <p className="text-sm text-mute">{station.host}</p>
-              {station.href ? (
-                <a href={station.href} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center text-sm text-brass">
-                  {station.upstream}
-                </a>
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
-      <Panel className="mt-6 grid gap-3">
-        <h2 className="font-display text-2xl text-paper">Reverse a tool</h2>
+      <Panel className="grid gap-3">
+        <h2 className="font-display text-2xl text-paper">What are they renting?</h2>
         <p className="text-sm leading-relaxed text-mute">
-          Describe the job it sells. The desk maps it to a station. REA, upstream, is what you run when you
-          need the binary, not the brochure.
+          Name the product and the job it actually sells. The desk prices that job on a station you already
+          bill{client ? `, for ${client.name}` : ""}.
         </p>
-        <Field label="Product" value={name} onChange={setName} placeholder="The thing with the invoice" />
-        <Field label="What it charges" value={price} onChange={setPrice} placeholder="$ / month, if you know" />
+        <Field label="Product" value={name} onChange={setName} placeholder="The invoice in their stack" />
+        <Field label="What it charges" value={price} onChange={setPrice} placeholder="$40 / month" />
         <Area label="The job" value={job} onChange={setJob} rows={3} />
         <Btn
           disabled={!name.trim() || !job.trim()}
@@ -350,22 +333,32 @@ export function Lab() {
             setJob("");
           }}
         >
-          Map the job
+          Price it on the desk
         </Btn>
       </Panel>
       <ul className="mt-4 space-y-3">
         {tears.map((tear) => {
           const station = stationById(tear.station);
+          const seats = client?.seats ?? 1;
+          const onDesk = client ? quote({ ...client, jobs: [tear.station as StationId] }) : null;
           return (
             <li key={tear.id}>
               <Panel>
                 <p className="text-paper">{tear.name}</p>
-                <p className="text-sm text-mute">{tear.price}</p>
+                <p className="text-sm text-mute">They pay {tear.price}</p>
                 <p className="mt-2 text-sm leading-relaxed text-paper">{tear.job}</p>
-                <p className="mt-2 text-sm text-brass">
-                  Station {station.index} · {station.name}
-                  {station.upstream ? ` · ${station.upstream}` : ""}
+                <p className="mt-3 text-sm text-brass">
+                  Sell it as {station.name}
+                  {station.ask > 0 ? ` · $${station.ask} a seat` : ""}
+                  {onDesk && station.ask > 0
+                    ? ` · ${dollars(onDesk.charge)} / mo on ${seats} ${seats === 1 ? "seat" : "seats"}`
+                    : ""}
                 </p>
+                {onDesk && station.ask > 0 ? (
+                  <p className="mt-1 text-sm text-mute">
+                    You keep {dollars(onDesk.margin)} after {dollars(onDesk.cost)} to run it.
+                  </p>
+                ) : null}
                 <Btn kind="quiet" onClick={() => removeTear(tear.id)}>
                   Drop
                 </Btn>
@@ -376,4 +369,8 @@ export function Lab() {
       </ul>
     </div>
   );
+}
+
+function dollars(value: number): string {
+  return `$${value.toLocaleString()}`;
 }

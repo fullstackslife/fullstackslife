@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { StationId } from "./catalog";
+import { JOBS, type StationId } from "./catalog";
 
 export type Booking = {
   id: string;
@@ -78,8 +78,17 @@ export type Tear = {
   station: StationId;
 };
 
-type DeskData = {
+export type Client = {
+  id: string;
+  name: string;
   seats: number;
+  jobs: StationId[];
+  discount: number;
+};
+
+type DeskData = {
+  clients: Client[];
+  activeId: string;
   bookings: Booking[];
   threads: Thread[];
   tasks: Task[];
@@ -92,7 +101,9 @@ type DeskData = {
 };
 
 type DeskState = DeskData & {
-  setSeats: (seats: number) => void;
+  setActive: (id: string) => void;
+  addClient: (name: string) => void;
+  patchClient: (id: string, patch: Partial<Pick<Client, "name" | "seats" | "jobs" | "discount">>) => void;
   addBooking: (booking: Omit<Booking, "id">) => void;
   removeBooking: (id: string) => void;
   addThread: (thread: Omit<Thread, "id" | "messages" | "status"> & { body: string }) => void;
@@ -121,8 +132,25 @@ function uid(): string {
 }
 
 function seed(): DeskData {
+  const all = JOBS.map((station) => station.id);
   return {
-    seats: 1,
+    clients: [
+      {
+        id: "harbor",
+        name: "Harbor Studio",
+        seats: 4,
+        jobs: all,
+        discount: 0,
+      },
+      {
+        id: "north",
+        name: "Northwind Clinic",
+        seats: 8,
+        jobs: ["book", "inbox", "library"],
+        discount: 0.1,
+      },
+    ],
+    activeId: "harbor",
     bookings: [
       {
         id: "bk-priya",
@@ -198,13 +226,13 @@ function seed(): DeskData {
     notes: [
       {
         id: "nt-1",
-        title: "What this desk refuses",
-        body: "One object model. A person, a time, a piece of work, a voice, a page. Stations do not invent a second login, a second note, or a second task list. Upstream repos stay upstream.",
+        title: "Harbor onboarding",
+        body: "Four seats. They book, they write, they record. One invoice on the first of the month. Do not send them nine logins.",
       },
       {
         id: "nt-2",
-        title: "Voice without a studio seat",
-        body: "Studio speaks with the voices already installed on the device. VoiceStudio, upstream, is the local cloning and dubbing app when the browser voice is not enough.",
+        title: "Northwind, Fridays",
+        body: "Clinic desk is book, inbox, and library. Ten percent off the ask. They do not want voice or a reel.",
       },
       {
         id: "nt-3",
@@ -216,17 +244,17 @@ function seed(): DeskData {
       {
         id: "sc-1",
         title: "Twenty-second intro",
-        body: "This is the desk. Nine jobs used to be nine subscriptions. They share one ledger now. Book a time, answer the thread, move the work.",
+        body: "This is your desk. Scheduling, the inbox, and the work are one invoice. Book a time, answer the thread, move the job.",
       },
     ],
     audits: [
       {
         id: "au-1",
         url: "https://example.com/desk",
-        title: "Full Stacks Life — one desk for nine jobs",
-        meta: "A homogeneous desk for scheduling, inbox, projects, notes, dictation, voice, on-page search, capture, and motion. The open-source projects stay upstream.",
-        h1: "Nine jobs. One desk.",
-        body: "Scheduling used to be a seat. Support used to be a seat. The project board, the notes, the dictation, the voice, the SEO suite, the screen recorder, and the video studio were nine more invoices. This page is the ledger they share. It does not vendor their code. It does the job, then points at the repository when you want the full self-hosted project. Prices shown on the floor are illustrative published entries, not quotes.",
+        title: "Harbor Studio — one desk",
+        meta: "Scheduling, inbox, and the work, on one monthly invoice. No second login for the notes.",
+        h1: "One desk for the studio",
+        body: "Harbor Studio books time, answers clients, and keeps the work on a single desk. The page says what the desk does and who it is for. It does not list other products. Title, description, and the heading agree. The body is long enough to say how a new client gets on, what a seat includes, and when the invoice goes out.",
         keyword: "desk",
         passed: 4,
         total: 6,
@@ -260,7 +288,26 @@ export const useDesk = create<DeskState>()(
   persist(
     (set) => ({
       ...seed(),
-      setSeats: (seats) => set({ seats: Math.min(24, Math.max(1, Math.round(seats))) }),
+      setActive: (id) => set({ activeId: id }),
+      addClient: (name) =>
+        set((state) => {
+          const id = uid();
+          return {
+            activeId: id,
+            clients: [
+              ...state.clients,
+              { id, name, seats: 3, jobs: JOBS.map((station) => station.id), discount: 0 },
+            ],
+          };
+        }),
+      patchClient: (id, patch) =>
+        set((state) => ({
+          clients: state.clients.map((client) => {
+            if (client.id !== id) return client;
+            const seats = patch.seats === undefined ? client.seats : Math.min(24, Math.max(1, Math.round(patch.seats)));
+            return { ...client, ...patch, seats };
+          }),
+        })),
       addBooking: (booking) => set((state) => ({ bookings: [{ ...booking, id: uid() }, ...state.bookings] })),
       removeBooking: (id) => set((state) => ({ bookings: state.bookings.filter((b) => b.id !== id) })),
       addThread: ({ from, subject, body }) =>
@@ -333,11 +380,12 @@ export const useDesk = create<DeskState>()(
       removeTear: (id) => set((state) => ({ tears: state.tears.filter((tear) => tear.id !== id) })),
     }),
     {
-      name: "fsl-desk-v1",
+      name: "fsl-desk-v2",
       skipHydration: true,
       storage: createJSONStorage(() => (typeof window === "undefined" ? memoryStorage : localStorage)),
       partialize: (state) => ({
-        seats: state.seats,
+        clients: state.clients,
+        activeId: state.activeId,
         bookings: state.bookings,
         threads: state.threads,
         tasks: state.tasks,
@@ -348,10 +396,17 @@ export const useDesk = create<DeskState>()(
         shots: state.shots,
         tears: state.tears,
       }),
-      merge: (persisted, current) => ({
-        ...current,
-        ...(persisted as Partial<DeskData>),
-      }),
+      merge: (persisted, current) => {
+        const next = { ...current, ...(persisted as Partial<DeskData>) };
+        if (!next.clients?.length) {
+          next.clients = seed().clients;
+          next.activeId = seed().activeId;
+        }
+        if (!next.clients.some((client) => client.id === next.activeId)) {
+          next.activeId = next.clients[0]?.id ?? seed().activeId;
+        }
+        return next;
+      },
     },
   ),
 );
