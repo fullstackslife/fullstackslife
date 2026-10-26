@@ -25,7 +25,10 @@ export type Station = {
   ask: number;
   /** What it costs you to run the job for a month, not per seat. */
   cost: number;
+  /** True when the code on the invoice is ours, not an upstream repo. */
+  own: boolean;
   line: string;
+  why: string;
 };
 
 export const STATIONS: Station[] = [
@@ -37,7 +40,9 @@ export const STATIONS: Station[] = [
     price: 0,
     ask: 0,
     cost: 0,
+    own: false,
     line: "Whose desk is open, what they pay, what you keep.",
+    why: "",
   },
   {
     id: "book",
@@ -47,7 +52,9 @@ export const STATIONS: Station[] = [
     price: 12,
     ask: 8,
     cost: 4,
-    line: "They pick a time. The seat is on your invoice.",
+    own: true,
+    line: "A link, a week, a confirmation.",
+    why: "Small enough to write ourselves. We bill our scheduler, not Cal.com.",
   },
   {
     id: "inbox",
@@ -57,7 +64,9 @@ export const STATIONS: Station[] = [
     price: 74,
     ask: 29,
     cost: 12,
-    line: "One thread, one reply, billed with the desk.",
+    own: true,
+    line: "A thread and a reply.",
+    why: "We write the inbox. Chatwoot's paid half is not ours to resell.",
   },
   {
     id: "board",
@@ -67,7 +76,9 @@ export const STATIONS: Station[] = [
     price: 11,
     ask: 8,
     cost: 6,
-    line: "The work, in three piles, on the same bill.",
+    own: true,
+    line: "Three columns on the same desk.",
+    why: "Already ours. Worth money only because it sits on the invoice with the rest.",
   },
   {
     id: "library",
@@ -77,7 +88,9 @@ export const STATIONS: Station[] = [
     price: 10,
     ask: 6,
     cost: 4,
-    line: "Notes they can ask. Memory is a line item.",
+    own: true,
+    line: "Notes and search.",
+    why: "The notes are ours. An AI answer is a model bill, not this line.",
   },
   {
     id: "dictate",
@@ -85,9 +98,11 @@ export const STATIONS: Station[] = [
     name: "Dictate",
     replaces: "Wispr Flow",
     price: 12,
-    ask: 8,
+    ask: 0,
     cost: 0,
-    line: "They talk. You file it. The device does the listening.",
+    own: false,
+    line: "Talk, then file it.",
+    why: "A free desktop app already does this. This demo is not a seat.",
   },
   {
     id: "studio",
@@ -95,9 +110,11 @@ export const STATIONS: Station[] = [
     name: "Studio",
     replaces: "ElevenLabs",
     price: 22,
-    ask: 12,
+    ask: 0,
     cost: 0,
-    line: "Read the script in a voice already on this device.",
+    own: false,
+    line: "Read a script aloud.",
+    why: "The upstream is AGPL, the models belong to someone else, and a cloned voice is not ours to bill.",
   },
   {
     id: "lens",
@@ -105,9 +122,11 @@ export const STATIONS: Station[] = [
     name: "Lens",
     replaces: "Semrush",
     price: 140,
-    ask: 49,
-    cost: 11,
-    line: "Score the page they hand you. Bill the seat, not a crawl.",
+    ask: 0,
+    cost: 0,
+    own: false,
+    line: "Score a page you paste.",
+    why: "Semrush is the index. We don't have one.",
   },
   {
     id: "stage",
@@ -115,9 +134,11 @@ export const STATIONS: Station[] = [
     name: "Stage",
     replaces: "Loom",
     price: 15,
-    ask: 9,
-    cost: 3,
-    line: "A take with a script. The recording sits on the desk.",
+    ask: 0,
+    cost: 0,
+    own: false,
+    line: "A take and a script.",
+    why: "Ownable once we host the file. A recording with nowhere to put it is not a product.",
   },
   {
     id: "reel",
@@ -125,9 +146,11 @@ export const STATIONS: Station[] = [
     name: "Reel",
     replaces: "Higgsfield",
     price: 29,
-    ask: 15,
+    ask: 0,
     cost: 0,
-    line: "Shots in order. You sell the pack, not a generation key.",
+    own: false,
+    line: "Shots, in order.",
+    why: "The frames come from someone else's model and key.",
   },
   {
     id: "lab",
@@ -137,11 +160,15 @@ export const STATIONS: Station[] = [
     price: 0,
     ask: 0,
     cost: 0,
-    line: "Name what they pay for. Put that job on a station you already sell.",
+    own: false,
+    line: "Name a product. We either write that job ourselves, or we don't sell it.",
+    why: "",
   },
 ];
 
-export const JOBS = STATIONS.filter((station) => station.ask > 0);
+export const JOBS = STATIONS.filter((station) => station.own);
+
+export const HELD = STATIONS.filter((station) => !station.own && station.id !== "floor" && station.id !== "lab");
 
 export function stationById(id: StationId): Station {
   return STATIONS.find((station) => station.id === id) ?? STATIONS[0];

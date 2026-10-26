@@ -313,8 +313,8 @@ export function Lab() {
       <Panel className="grid gap-3">
         <h2 className="font-display text-2xl text-paper">What are they renting?</h2>
         <p className="text-sm leading-relaxed text-mute">
-          Name the product and the job it actually sells. The desk prices that job on a station you already
-          bill{client ? `, for ${client.name}` : ""}.
+          Name the product and the job it sells. If that job is one we can write, it goes on the invoice.
+          If it isn't, we don't bill it.
         </p>
         <Field label="Product" value={name} onChange={setName} placeholder="The invoice in their stack" />
         <Field label="What it charges" value={price} onChange={setPrice} placeholder="$40 / month" />
@@ -348,17 +348,18 @@ export function Lab() {
                 <p className="text-sm text-mute">They pay {tear.price}</p>
                 <p className="mt-2 text-sm leading-relaxed text-paper">{tear.job}</p>
                 <p className="mt-3 text-sm text-brass">
-                  Sell it as {station.name}
-                  {station.ask > 0 ? ` · $${station.ask} a seat` : ""}
-                  {onDesk && station.ask > 0
-                    ? ` · ${dollars(onDesk.charge)} / mo on ${seats} ${seats === 1 ? "seat" : "seats"}`
-                    : ""}
+                  {station.own
+                    ? `Write our own ${station.name}. $${station.ask} a seat.`
+                    : "Don't sell it."}
                 </p>
-                {onDesk && station.ask > 0 ? (
+                {station.own && onDesk ? (
                   <p className="mt-1 text-sm text-mute">
-                    You keep {dollars(onDesk.margin)} after {dollars(onDesk.cost)} to run it.
+                    {dollars(onDesk.charge)} / mo on {seats} {seats === 1 ? "seat" : "seats"}. You keep{" "}
+                    {dollars(onDesk.margin)} after {dollars(onDesk.cost)} to run it.
                   </p>
-                ) : null}
+                ) : (
+                  <p className="mt-1 text-sm text-mute">{station.why}</p>
+                )}
                 <Btn kind="quiet" onClick={() => removeTear(tear.id)}>
                   Drop
                 </Btn>

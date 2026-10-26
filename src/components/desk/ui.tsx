@@ -92,7 +92,10 @@ export function StationHead({ id }: { id: StationId }) {
       <p className="text-sm tabular-nums text-brass">{station.index}</p>
       <h1 className="font-display text-4xl leading-none text-paper">{station.name}</h1>
       <p className="mt-3 max-w-xl text-base leading-relaxed text-paper">{station.line}</p>
-      {station.ask > 0 ? <p className="mt-2 max-w-xl text-sm leading-relaxed text-mute">{moneyLine(station)}</p> : null}
+      {station.own ? <p className="mt-2 max-w-xl text-sm leading-relaxed text-mute">{moneyLine(station)}</p> : null}
+      {!station.own && station.why ? (
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-mute">{station.why}</p>
+      ) : null}
     </header>
   );
 }

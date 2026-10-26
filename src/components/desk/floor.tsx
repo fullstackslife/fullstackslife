@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { JOBS, quote, stationById } from "@/lib/stack/catalog";
+import { HELD, JOBS, quote, stationById } from "@/lib/stack/catalog";
 import { useDesk } from "@/lib/stack/store";
 import { when } from "@/lib/stack/time";
 import { Panel } from "./ui";
@@ -136,7 +136,8 @@ export function Floor() {
         </button>
       </section>
 
-      <ul className="mt-6 divide-y divide-line border-y border-line">
+      <h2 className="mt-6 font-display text-xl text-paper">On the invoice</h2>
+      <ul className="mt-2 divide-y divide-line border-y border-line">
         {JOBS.map((station) => {
           const on = client.jobs.includes(station.id);
           return (
@@ -167,8 +168,23 @@ export function Floor() {
           );
         })}
       </ul>
+      <h2 className="mt-8 font-display text-xl text-paper">Not ours</h2>
+      <ul className="mt-2 divide-y divide-line border-y border-line">
+        {HELD.map((station) => (
+          <li key={station.id}>
+            <Link
+              to="/"
+              search={{ station: station.id }}
+              className="flex min-h-14 items-center gap-3 py-2"
+            >
+              <span className="w-16 shrink-0 text-mute">{station.name}</span>
+              <span className="min-w-0 text-sm leading-snug text-mute">{station.why}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
       <p className="mt-3 text-sm leading-relaxed text-mute">
-        The lines above sum to the ask. To run is once a month for the jobs that are on, not once per seat.
+        The invoice is only the jobs we write. To run is once a month, not once per seat.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">

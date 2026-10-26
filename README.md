@@ -1,10 +1,8 @@
 # Full Stacks Life
 
-The desk you sell. One client, one invoice, the jobs they used to rent separately.
+The invoice is the jobs we write: Book, Inbox, Board, Library.
 
-Open the floor, pick a client, and the blotter shows three numbers: what the closed seats list at, what you charge, and what you keep after it costs you to run. Turn a job off and it leaves the bill. Lab prices a product they already pay for onto a station you already sell.
-
-Book, Inbox, Board, Library, Dictate, Studio, Lens, Stage, and Reel are the work. They are not a directory.
+Dictate, Studio, Lens, Stage, and Reel stay on the desk and off the bill. A free app, someone else's model, or an index we don't have is not a seat. Stage can come onto the invoice once the recording lives on our host.
 
 
 ## Deploy
