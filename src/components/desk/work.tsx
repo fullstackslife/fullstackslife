@@ -95,7 +95,8 @@ export function Book() {
           </Btn>
         </Panel>
       ) : null}
-      <ul className="mt-8 divide-y divide-line border-t border-line">
+      {bookings.length === 0 ? <p className="mt-8 text-sm text-mute">Nothing held yet.</p> : null}
+      <ul className="mt-4 divide-y divide-line border-t border-line">
         {[...bookings]
           .sort((a, b) => +new Date(a.at) - +new Date(b.at))
           .map((booking) => (

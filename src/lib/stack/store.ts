@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { StationId } from "./catalog";
+import type { PlanId, StationId } from "./catalog";
 
 export type Booking = {
   id: string;
@@ -78,17 +78,14 @@ export type Tear = {
   station: StationId;
 };
 
-export type Client = {
-  id: string;
+export type Workspace = {
   name: string;
-  spend: number;
-  status: "lead" | "sold" | "live";
-  done: StationId[];
+  jobs: StationId[];
+  plan: PlanId;
 };
 
 type DeskData = {
-  clients: Client[];
-  activeId: string;
+  workspace: Workspace | null;
   bookings: Booking[];
   threads: Thread[];
   tasks: Task[];
@@ -101,12 +98,7 @@ type DeskData = {
 };
 
 type DeskState = DeskData & {
-  setActive: (id: string) => void;
-  addClient: (name: string, spend: number) => void;
-  patchClient: (
-    id: string,
-    patch: Partial<Pick<Client, "name" | "spend" | "status" | "done">>,
-  ) => void;
+  completeSetup: (workspace: Workspace) => void;
   addBooking: (booking: Omit<Booking, "id">) => void;
   removeBooking: (id: string) => void;
   addThread: (thread: Omit<Thread, "id" | "messages" | "status"> & { body: string }) => void;
@@ -136,139 +128,15 @@ function uid(): string {
 
 function seed(): DeskData {
   return {
-    clients: [
-      {
-        id: "north",
-        name: "Northwind Clinic",
-        spend: 900,
-        status: "lead",
-        done: [],
-      },
-    ],
-    activeId: "north",
-    bookings: [
-      {
-        id: "bk-priya",
-        name: "Priya Shah",
-        note: "Portfolio review, keep it to the work.",
-        kind: "Intro · 25 min",
-        at: "2026-10-26T14:30:00.000Z",
-      },
-      {
-        id: "bk-sam",
-        name: "Sam Okonkwo",
-        note: "Working session on the launch page.",
-        kind: "Working · 50 min",
-        at: "2026-10-28T17:00:00.000Z",
-      },
-    ],
-    threads: [
-      {
-        id: "th-jordan",
-        from: "Jordan Hale",
-        subject: "Where is the recording?",
-        status: "open",
-        messages: [
-          {
-            id: "m1",
-            from: "them",
-            body: "I can see the invite but not the take you mentioned. Can you drop it on the desk?",
-            at: "2026-10-25T12:12:00.000Z",
-          },
-        ],
-      },
-      {
-        id: "th-north",
-        from: "Northwind Clinic",
-        subject: "Can we move Thursday?",
-        status: "waiting",
-        messages: [
-          {
-            id: "m2",
-            from: "them",
-            body: "Thursday 1pm conflicts with a procedure. Friday morning still open?",
-            at: "2026-10-24T20:40:00.000Z",
-          },
-          {
-            id: "m3",
-            from: "me",
-            body: "Friday 10:30 is free. I moved the hold.",
-            at: "2026-10-24T21:05:00.000Z",
-          },
-        ],
-      },
-      {
-        id: "th-alex",
-        from: "Alex Nguyen",
-        subject: "Invoice received",
-        status: "closed",
-        messages: [
-          {
-            id: "m4",
-            from: "them",
-            body: "Got it. We'll pay on the 30th.",
-            at: "2026-10-21T15:02:00.000Z",
-          },
-        ],
-      },
-    ],
-    tasks: [
-      { id: "tk-1", title: "Reply to Jordan with the take", column: "now" },
-      { id: "tk-2", title: "Write the onboarding note", column: "now" },
-      { id: "tk-3", title: "Cut the reel to four shots", column: "backlog" },
-      { id: "tk-4", title: "Publish the scheduling page", column: "done" },
-    ],
-    notes: [
-      {
-        id: "nt-1",
-        title: "Harbor onboarding",
-        body: "Four seats. They book, they write, they record. One invoice on the first of the month. Do not send them nine logins.",
-      },
-      {
-        id: "nt-2",
-        title: "Northwind, Fridays",
-        body: "Clinic desk is book, inbox, and library. Ten percent off the ask. They do not want voice or a reel.",
-      },
-      {
-        id: "nt-3",
-        title: "Page score rules",
-        body: "Title 45 to 65 characters. Description 120 to 165. One H1 under 80 characters. Keyword in the title and the H1. Body of at least 300 words. Lens does not crawl the web and does not pretend to be Semrush.",
-      },
-    ],
-    scripts: [
-      {
-        id: "sc-1",
-        title: "Twenty-second intro",
-        body: "This is your desk. Scheduling, the inbox, and the work are one invoice. Book a time, answer the thread, move the job.",
-      },
-    ],
-    audits: [
-      {
-        id: "au-1",
-        url: "https://example.com/desk",
-        title: "Harbor Studio — one desk",
-        meta: "Scheduling, inbox, and the work, on one monthly invoice. No second login for the notes.",
-        h1: "One desk for the studio",
-        body: "Harbor Studio books time, answers clients, and keeps the work on a single desk. The page says what the desk does and who it is for. It does not list other products. Title, description, and the heading agree. The body is long enough to say how a new client gets on, what a seat includes, and when the invoice goes out.",
-        keyword: "desk",
-        passed: 4,
-        total: 6,
-      },
-    ],
-    takes: [
-      {
-        id: "take-1",
-        title: "How the desk is one system",
-        audience: "Someone about to rent another seat",
-        script: "Don't add a tool. Add the job to the desk. Time, people, work, memory, voice, reach.",
-        seconds: 45,
-      },
-    ],
-    shots: [
-      { id: "sh-1", prompt: "A walnut desk at night, one brass lamp, an empty chair", camera: "Static", seconds: 3 },
-      { id: "sh-2", prompt: "A hand closes nine invoices into a single folder", camera: "Push in", seconds: 4 },
-      { id: "sh-3", prompt: "The lamp stays on. The chair is now occupied, writing", camera: "Handheld", seconds: 3 },
-    ],
+    workspace: null,
+    bookings: [],
+    threads: [],
+    tasks: [],
+    notes: [],
+    scripts: [],
+    audits: [],
+    takes: [],
+    shots: [],
     tears: [],
   };
 }
@@ -283,23 +151,7 @@ export const useDesk = create<DeskState>()(
   persist(
     (set) => ({
       ...seed(),
-      setActive: (id) => set({ activeId: id }),
-      addClient: (name, spend) =>
-        set((state) => {
-          const id = uid();
-          return {
-            activeId: id,
-            clients: [...state.clients, { id, name, spend: Math.max(0, Math.round(spend)), status: "lead", done: [] }],
-          };
-        }),
-      patchClient: (id, patch) =>
-        set((state) => ({
-          clients: state.clients.map((client) => {
-            if (client.id !== id) return client;
-            const spend = patch.spend === undefined ? client.spend : Math.max(0, Math.round(patch.spend));
-            return { ...client, ...patch, spend };
-          }),
-        })),
+      completeSetup: (workspace) => set({ workspace }),
       addBooking: (booking) => set((state) => ({ bookings: [{ ...booking, id: uid() }, ...state.bookings] })),
       removeBooking: (id) => set((state) => ({ bookings: state.bookings.filter((b) => b.id !== id) })),
       addThread: ({ from, subject, body }) =>
@@ -372,12 +224,11 @@ export const useDesk = create<DeskState>()(
       removeTear: (id) => set((state) => ({ tears: state.tears.filter((tear) => tear.id !== id) })),
     }),
     {
-      name: "fsl-desk-v3",
+      name: "fsl-desk-v4",
       skipHydration: true,
       storage: createJSONStorage(() => (typeof window === "undefined" ? memoryStorage : localStorage)),
       partialize: (state) => ({
-        clients: state.clients,
-        activeId: state.activeId,
+        workspace: state.workspace,
         bookings: state.bookings,
         threads: state.threads,
         tasks: state.tasks,
@@ -390,13 +241,7 @@ export const useDesk = create<DeskState>()(
       }),
       merge: (persisted, current) => {
         const next = { ...current, ...(persisted as Partial<DeskData>) };
-        if (!next.clients?.length || typeof next.clients[0]?.spend !== "number") {
-          next.clients = seed().clients;
-          next.activeId = seed().activeId;
-        }
-        if (!next.clients.some((client) => client.id === next.activeId)) {
-          next.activeId = next.clients[0]?.id ?? seed().activeId;
-        }
+        if (!next.workspace || typeof next.workspace.name !== "string") next.workspace = null;
         return next;
       },
     },

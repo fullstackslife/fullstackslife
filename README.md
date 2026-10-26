@@ -1,8 +1,7 @@
 # Full Stacks Life
 
-A service, not a cheaper clone of free tools.
+A SaaS setup. Name the workspace, turn on Book, Inbox, Board, and Library, pick Desk or Plus. The desk starts empty.
 
-$4,000 to take a company off scheduling, a shared inbox, projects, and notes. $500 a month to run them. If they already pay less than $500, do not sell it.
 
 
 

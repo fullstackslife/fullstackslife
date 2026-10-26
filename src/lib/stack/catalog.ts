@@ -42,7 +42,7 @@ export const STATIONS: Station[] = [
     cost: 0,
     own: true,
     line: "Their scheduling page, on their domain.",
-    why: "Included in the retainer. Not sold alone.",
+    why: "",
   },
   {
     id: "inbox",
@@ -54,7 +54,7 @@ export const STATIONS: Station[] = [
     cost: 0,
     own: true,
     line: "Their shared inbox.",
-    why: "Included in the retainer. Not sold alone.",
+    why: "",
   },
   {
     id: "board",
@@ -66,7 +66,7 @@ export const STATIONS: Station[] = [
     cost: 0,
     own: true,
     line: "Their board.",
-    why: "Included in the retainer. Not sold alone.",
+    why: "",
   },
   {
     id: "library",
@@ -78,7 +78,7 @@ export const STATIONS: Station[] = [
     cost: 0,
     own: true,
     line: "Their notes.",
-    why: "Included in the retainer. Not sold alone.",
+    why: "",
   },
 ];
 
@@ -92,25 +92,15 @@ export function isStationId(value: unknown): value is StationId {
   return typeof value === "string" && (STATION_IDS as readonly string[]).includes(value);
 }
 
-export const SETUP = 4000;
-export const RETAINER = 500;
+export const PLANS = [
+  { id: "desk", name: "Desk", price: 49, seats: 3, line: "Book, inbox, board, and library." },
+  { id: "plus", name: "Plus", price: 99, seats: 10, line: "The same four, for a larger team." },
+] as const;
 
-export function offer(spend: number): {
-  setup: number;
-  retainer: number;
-  spend: number;
-  save: number;
-  sell: boolean;
-  payback: number | null;
-} {
-  const save = spend - RETAINER;
-  return {
-    setup: SETUP,
-    retainer: RETAINER,
-    spend,
-    save,
-    sell: save > 0,
-    payback: save > 0 ? Math.ceil(SETUP / save) : null,
-  };
+export type PlanId = (typeof PLANS)[number]["id"];
+
+export function planById(id: PlanId) {
+  return PLANS.find((plan) => plan.id === id) ?? PLANS[0];
 }
+
 

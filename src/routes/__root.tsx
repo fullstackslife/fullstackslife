@@ -14,7 +14,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "We replace the scheduling, inbox, projects, and notes a company already pays for, and we run them.",
+          "Set up a workspace, turn on the jobs, pick a plan.",
       },
       { name: "theme-color", content: "#16130F" },
     ],
